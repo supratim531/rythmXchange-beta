@@ -77,10 +77,17 @@ app.post("/upload", cors(), upload.array("file"), async (req, res) => {
     const tokenURI = {
       song: req.body.song,
       artist: req.body.artist,
-      description: req.body.description,
       imageURL: `https://${PINATA_DOMAIN}/ipfs/${imageFileResponse.IpfsHash}`,
       coverImageURL: `https://${PINATA_DOMAIN}/ipfs/${coverImageFileResponse.IpfsHash}`,
       songURL: `https://${PINATA_DOMAIN}/ipfs/${songFileResponse.IpfsHash}`,
+      attributes: [
+        {
+          color: "Black",
+        },
+      ],
+      description: req.body.description,
+      image: `https://${PINATA_DOMAIN}/ipfs/${imageFileResponse.IpfsHash}`,
+      name: req.body.song,
     };
 
     const tokenURIPinOptions = {
