@@ -1,10 +1,10 @@
 import React from "react";
-import MintNFT from "./components/MintNFT";
+import UploadSong from "./components/UploadSong";
 
 function App() {
   return (
     <div className="text-2xl">
-      <MintNFT />
+      <UploadSong />
     </div>
   );
 }
