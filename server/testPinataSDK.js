@@ -1,8 +1,9 @@
-const dotenv = require("dotenv");
+require("dotenv").config();
+
 const pinataSDK = require("@pinata/sdk");
 
-dotenv.config();
-const { PINATA_API_KEY, PINATA_API_SECRET } = process.env;
+const { PINATA_DOMAIN, PINATA_API_KEY, PINATA_API_SECRET } = process.env;
+
 const pinata = new pinataSDK(PINATA_API_KEY, PINATA_API_SECRET);
 
 async function testAuthentication() {
@@ -16,7 +17,7 @@ async function testAuthentication() {
 
 async function uploadJSONToPinata(json) {
   try {
-    const options = {
+    const pinOptions = {
       pinataMetadata: {
         name: "test.json",
       },
@@ -24,22 +25,20 @@ async function uploadJSONToPinata(json) {
         cidVersion: 0,
       },
     };
-    const res = await pinata.pinJSONToIPFS(json, options);
+    const res = await pinata.pinJSONToIPFS(json, pinOptions);
     console.log({ res });
+    console.log(`Visit https://${PINATA_DOMAIN}/ipfs/${res.IpfsHash}`);
   } catch (err) {
     console.log({ err });
   }
 }
 
 const json = {
-  name: "Test JSON File1",
-  description: "This is a long description of this JSON1",
-  attributes: {
-    singer: "Name of Singer1",
-    album: "Album1",
-  },
-  song: "songCID",
-  image: "imageCID",
+  song: "Song1",
+  singer: "Singer1",
+  description: "This is the long description of the Song1",
+  imageURL: `https://${PINATA_DOMAIN}/ipfs/<imageCID>`,
+  songURL: `https://${PINATA_DOMAIN}/ipfs/<songCID>`,
 };
 
 testAuthentication();

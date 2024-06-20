@@ -3,17 +3,18 @@ import defaultAxios from "../axios";
 
 const MintNFT = () => {
   const [data, setData] = useState({
-    name: "",
+    song: "",
+    artist: "",
     description: "",
-    singer: "",
   });
 
   const [file, setFile] = useState({
-    image: null,
-    song: null,
+    imageFile: null,
+    coverImageFile: null,
+    songFile: null,
   });
 
-  const handleInputChange = (e) => {
+  const handleDataChange = (e) => {
     setData((prev) => ({
       ...prev,
       [e.target.name]: e.target.value,
@@ -23,8 +24,7 @@ const MintNFT = () => {
   const handleFileChange = (e) => {
     setFile((prev) => ({
       ...prev,
-      [e.target.name]:
-        e.target.name === "image" ? e.target.files[0] : e.target.files[1],
+      [e.target.name]: e.target.files[0],
     }));
   };
 
@@ -33,27 +33,23 @@ const MintNFT = () => {
 
     try {
       const formData = new FormData();
-      formData.append("name", data.name);
+      formData.append("song", data.song);
+      formData.append("artist", data.artist);
       formData.append("description", data.description);
-      formData.append("singer", data.singer);
-      formData.append("image", file.image);
-      formData.append("song", file.song);
+      formData.append("file", file.imageFile);
+      formData.append("file", file.coverImageFile);
+      formData.append("file", file.songFile);
 
       console.log(data);
       console.log(file);
       console.log(formData);
-      const res = await defaultAxios.post("/upload", formData);
-      console.log({ res });
 
-      setData({
-        name: "",
-        description: "",
-        singer: "",
+      const res = await defaultAxios.post("/upload", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       });
-      setFile({
-        image: null,
-        song: null,
-      });
+      console.log({ res });
     } catch (err) {
       console.log({ err });
     }
@@ -64,31 +60,51 @@ const MintNFT = () => {
       <form onSubmit={handleSubmit} className="flex flex-col gap-10">
         <input
           type="text"
-          name="name"
-          className="rounded p-3 border border-gray-600"
-          placeholder="Give a Song Name"
-          value={data.name}
-          onChange={handleInputChange}
+          name="song"
+          className="form-input"
+          placeholder="Name of the Song"
+          value={data.song}
+          onChange={handleDataChange}
         />
         <input
           type="text"
-          name="singer"
-          className="rounded p-3 border border-gray-600"
-          placeholder="Artist Name"
-          value={data.singer}
-          onChange={handleInputChange}
+          name="artist"
+          className="form-input"
+          placeholder="Name of the Artist"
+          value={data.artist}
+          onChange={handleDataChange}
         />
-        <input
-          type="text"
+        <textarea
+          rows={5}
+          cols={3}
           name="description"
-          className="rounded p-3 border border-gray-600"
-          placeholder="Give a Song Description"
+          className="form-input"
+          placeholder="Description for the Song"
           value={data.description}
-          onChange={handleInputChange}
-        />
-        <input type="file" name="image" onChange={handleFileChange} />
-        <input type="file" name="song" onChange={handleFileChange} />
-        <button type="submit">Upload Song</button>
+          onChange={handleDataChange}
+        ></textarea>
+        <div>
+          <label>Choose an Image: </label>
+          <input type="file" name="imageFile" onChange={handleFileChange} />
+        </div>
+        <div>
+          <label>Choose a Cover Image: </label>
+          <input
+            type="file"
+            name="coverImageFile"
+            onChange={handleFileChange}
+          />
+        </div>
+        <div className="">
+          <label>Choose the Song: </label>
+          <input type="file" name="songFile" onChange={handleFileChange} />
+        </div>
+        <button
+          type="submit"
+          className="self-start px-6 py-3 pb-4 rounded transition-all text-white bg-blue-600 hover:bg-blue-800"
+        >
+          Upload
+        </button>
       </form>
     </div>
   );

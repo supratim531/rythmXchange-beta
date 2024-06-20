@@ -1,81 +1,103 @@
+require("dotenv").config();
+
 const cors = require("cors");
 const multer = require("multer");
-const dotenv = require("dotenv");
 const express = require("express");
 const pinataSDK = require("@pinata/sdk");
 const streamifier = require("streamifier");
 
-dotenv.config();
-const app = express();
-const PORT = process.env.PORT || 5000;
-const pinata = new pinataSDK({ pinataJWTKey: process.env.PINATA_JWT });
+const { PORT, PINATA_DOMAIN, PINATA_API_KEY, PINATA_API_SECRET } = process.env;
 
-const upload = multer({
-  limits: {
-    fileSize: 1000000000,
-  },
-});
+const app = express();
+const port = PORT || 5000;
+const upload = multer({ limits: { fileSize: 1000000000 } });
+const pinata = new pinataSDK(PINATA_API_KEY, PINATA_API_SECRET);
 
 app.post("/upload", cors(), upload.array("file"), async (req, res) => {
   try {
-    console.log(req.body);
-    console.log(req.files);
-    const [file1, file2] = req.files;
-    const readableStreamOfFile1 = streamifier.createReadStream(file1.buffer);
-    const readableStreamOfFile2 = streamifier.createReadStream(file2.buffer);
+    console.log("data:", req.body);
+    console.log("files:", req.files);
+    const [imageFile, coverImageFile, songFile] = req.files;
 
-    const optionsOfFile1 = {
-      pinataMetadata: {
-        name: file1.originalname,
-      },
-      pinataOptions: {
-        cidVersion: 0,
-      },
-    };
-    const optionsOfFile2 = {
-      pinataMetadata: {
-        name: file2.originalname,
-      },
-      pinataOptions: {
-        cidVersion: 0,
-      },
-    };
-
-    const response1 = await pinata.pinFileToIPFS(
-      readableStreamOfFile1,
-      optionsOfFile1
+    /* converting files into readableStream */
+    const imageFileReadableStream = streamifier.createReadStream(
+      imageFile.buffer
     );
-    const response2 = await pinata.pinFileToIPFS(
-      readableStreamOfFile2,
-      optionsOfFile2
+    const coverImageFileReadableStream = streamifier.createReadStream(
+      coverImageFile.buffer
     );
+    const songFileReadableStream = streamifier.createReadStream(
+      songFile.buffer
+    );
+    /* converting files into readableStream */
 
-    const json = {
-      name: "Name1",
-      attributes: [
-        {
-          singer: "Singer1",
-          country: "Country1",
-        },
-      ],
-      description: "Long description1",
-      song: `https://blue-defensive-rhinoceros-347.mypinata.cloud/ipfs/${response2.IpfsHash}`,
-      image: `https://blue-defensive-rhinoceros-347.mypinata.cloud/ipfs/${response1.IpfsHash}`,
+    /* metadata of files to store in pinata */
+    const pinataOptions = {
+      cidVersion: 0,
     };
-    const options = {
+    const imageFilePinOptions = {
       pinataMetadata: {
-        name: `${file2.originalname}.metadata.json`,
+        name: imageFile.originalname,
       },
-      pinataOptions: {
-        cidVersion: 0,
+      pinataOptions,
+    };
+    const coverImageFilePinOptions = {
+      pinataMetadata: {
+        name: coverImageFile.originalname,
       },
+      pinataOptions,
+    };
+    const songFilePinOptions = {
+      pinataMetadata: {
+        name: songFile.originalname,
+      },
+      pinataOptions,
+    };
+    /* metadata of files to store in pinata */
+
+    /* response of each file uploaded to pinata */
+    const imageFileResponse = await pinata.pinFileToIPFS(
+      imageFileReadableStream,
+      imageFilePinOptions
+    );
+    console.log({ imageFileResponse });
+    const coverImageFileResponse = await pinata.pinFileToIPFS(
+      coverImageFileReadableStream,
+      coverImageFilePinOptions
+    );
+    console.log({ coverImageFileResponse });
+    const songFileResponse = await pinata.pinFileToIPFS(
+      songFileReadableStream,
+      songFilePinOptions
+    );
+    console.log({ songFileResponse });
+    /* response of each file uploaded to pinata */
+
+    // It is the tokenURI which will attached with the NFT
+    const tokenURI = {
+      song: req.body.song,
+      artist: req.body.artist,
+      description: req.body.description,
+      imageURL: `https://${PINATA_DOMAIN}/ipfs/${imageFileResponse.IpfsHash}`,
+      coverImageURL: `https://${PINATA_DOMAIN}/ipfs/${coverImageFileResponse.IpfsHash}`,
+      songURL: `https://${PINATA_DOMAIN}/ipfs/${songFileResponse.IpfsHash}`,
     };
 
-    const response = await pinata.pinJSONToIPFS(json, options);
-    console.log({ response });
+    const tokenURIPinOptions = {
+      pinataMetadata: {
+        name: `${songFile.originalname}.metadata.json`,
+      },
+      pinataOptions,
+    };
+
+    const tokenURIResponse = await pinata.pinJSONToIPFS(
+      tokenURI,
+      tokenURIPinOptions
+    );
+    console.log({ tokenURIResponse });
 
     return res.status(201).json({
-      status: `https://${process.env.PINATA_DOMAIN}/ipfs/${response.IpfsHash}`,
+      tokenURI: `https://${PINATA_DOMAIN}/ipfs/${tokenURIResponse.IpfsHash}`,
     });
   } catch (err) {
     console.log({ err });
@@ -86,6 +108,6 @@ app.post("/upload", cors(), upload.array("file"), async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is listening on port ${PORT}`);
+app.listen(port, () => {
+  console.log(`Server is listening on port ${port}`);
 });
